@@ -1,0 +1,5 @@
+bin/spidey
+*.o
+*.a
+*.swp
+*~
