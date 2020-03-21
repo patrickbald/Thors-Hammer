@@ -344,7 +344,3 @@ if ! check_status $? 0    || ! grep_all "$PATTERNS" $WORKSPACE/test || ! check_m
 else
     echo "Success"
 fi
-
-echo
-TESTS=$(($(grep -c Success $0) - 1))
-echo "   Score $(echo "scale=2; ($TESTS - $FAILURES) / $TESTS.0 * 4.0" | bc)"
