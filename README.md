@@ -4,7 +4,7 @@ This is the [Final Project] for [CSE 20289 Systems Programming (Spring 2020)].
 
 ## Members
 
-- Domer McDomerson (dmcdomer@nd.edu)
+- Patrick Bald
 
 ## Demonstration
 
