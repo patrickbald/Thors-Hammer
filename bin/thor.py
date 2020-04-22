@@ -39,7 +39,31 @@ def main():
     verbose = False
 
     # Parse command line arguments
-    pass
+
+    args = sys.argv[1:]
+
+    while args and args[0].startswith('-'):
+        arg = args.pop(0)
+        if arg == '-h':
+            hammers = args.pop(0)
+        elif arg == '-t':
+            throws = args.pop(0)
+        elif arg == '-v':
+            verbose = True
+
+    # remaining args should be url
+    if(len(args) == 0):
+        usage(1)
+
+    print(hammers)
+    print(throws)
+    print(verbose)
+    
+
+    URL = args.pop(0);
+
+    print(URL)
+
 
     # Create pool of workers and perform throws
     pass
