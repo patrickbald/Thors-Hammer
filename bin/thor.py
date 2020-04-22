@@ -27,7 +27,26 @@ def hammer(url, throws, verbose, hid):
 
     Return the average elapsed time of all the throws.
     '''
-    return 0
+    
+    startTime = time.time()
+    totalElasped = 0
+    for i in range(throws):
+        response = requests.get(url)
+        endTime = time.time()
+        elapsedTime = round(endTime - startTime, 2)
+        totalElasped += elapsedTime
+
+        if(verbose):
+            print(response.text)
+
+        print("Hammer: {}, Throw:    {}, Elapsed Time: {}".format(hid, i, elapsedTime))
+        
+    # average time across requests for this process
+    average = totalElasped / throws
+    print("Hammer: {}, AVERAGE    , Elapsed Time: {}".format(hid, average))
+
+
+    return average
 
 def do_hammer(args):
     ''' Use args tuple to call `hammer` '''
@@ -38,35 +57,40 @@ def main():
     throws  = 1
     verbose = False
 
-    # Parse command line arguments
+    # TODO Parse command line arguments
 
-    args = sys.argv[1:]
+    cmdargs = sys.argv[1:]
 
-    while args and args[0].startswith('-'):
-        arg = args.pop(0)
+    while cmdargs and cmdargs[0].startswith('-'):
+        arg = cmdargs.pop(0)
         if arg == '-h':
-            hammers = args.pop(0)
+            hammers = int(cmdargs.pop(0))
         elif arg == '-t':
-            throws = args.pop(0)
+            throws = int(cmdargs.pop(0))
         elif arg == '-v':
             verbose = True
 
     # remaining args should be url
-    if(len(args) == 0):
+    if(len(cmdargs) == 0):
         usage(1)
 
-    print(hammers)
-    print(throws)
-    print(verbose)
+    URL = cmdargs.pop(0);
+
+    # sequence of argument tuples with differing hammer ID
+    args = [ (URL, throws, verbose, i) for i in range(hammers) ]
+
+    # TODO Create pool of workers and perform throws
+
+    totalTime = 0 
     
-
-    URL = args.pop(0);
-
-    print(URL)
-
-
-    # Create pool of workers and perform throws
-    pass
+    with concurrent.futures.ProcessPoolExecutor(hammers) as executor:
+        totalTime = sum(executor.map(do_hammer, args))
+    
+    # average time across all hammers 
+    avgTime = totalTime / hammers; 
+    print("TOTAL AVERAGE ELAPSED TIME: {}".format(avgTime))
+    
+    
 
 # Main execution
 
