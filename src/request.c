@@ -312,6 +312,9 @@ int parse_request_headers(Request *r) {
         curr->name = strdup(name);
         curr->value = strdup(value);
 
+        debug("current name: %s\n", curr->name);
+        debug("current value: %s\n", curr->value);
+
         if(!(r->headers)) // first header
             r->headers = curr;
         else // has headers before it
