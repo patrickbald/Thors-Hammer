@@ -164,7 +164,7 @@ int parse_request(Request *r) {
         return -1;
     }
 
-    /* Parse HTTP Request Method */
+    /* TODO Parse HTTP Request Method */
     
     int methodStatus = parse_request_method(r);
     if(methodStatus < 0){
@@ -173,10 +173,12 @@ int parse_request(Request *r) {
     }
 
 
-    /* Parse HTTP Requet Headers*/
+    /* TODO Parse HTTP Requet Headers*/
     int requestStatus = parse_request_method(r);
-    
-
+    if(requestStatus < 0){
+        debug("Unable to parse request: %s\n", strerror(errno));
+        return -1;
+    }
 
     return 0;
 }
@@ -204,9 +206,22 @@ int parse_request_method(Request *r) {
     char *uri;
     char *query;
 
-    /* Read line from socket */
+    /* TODO Read line from socket */
 
-    /* Parse method and uri */
+    if(!fgets(buffer, BUFSIZ, r->stream)){
+            debug("Unable to read line from socket");
+            return -1;
+    }
+
+    /* TODO Parse method and uri */
+
+    method = strtok(buffer, WHITESPACE);
+    r->method = strdup(method);
+
+    uri = strtok(NULL, WHITESPACE);
+
+    
+
 
     /* Parse query from uri */
 
