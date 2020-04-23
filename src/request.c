@@ -32,19 +32,55 @@ Request * accept_request(int sfd) {
     struct sockaddr raddr;
     socklen_t rlen;
 
-    /* Allocate request struct (zeroed) */
+    /* TODO Allocate request struct (zeroed) */
 
-    /* Accept a client */
+    rlen = sizeof(raddr);
+    r = calloc(1, sizeof(Request));
 
-    /* Lookup client information */
+    if(!r)
+        return NULL;
 
-    /* Open socket stream */
+    /* TODO Accept a client */
+
+    int client_fd = accept(sfd, &raddr, &rlen);
+    if(client_fd < 0){
+        fprintf(stderr, "Unable to accept: %s\n", strerror(errno));
+        return NULL;
+    }
+    debug("Client accepted");
+
+    r->fd = client_fd;
+
+    /* TODO Lookup client information */
+
+    char host[NI_MAXHOST];
+    char port[NI_MAXSERV];
+    int flags = NI_NUMERICHOST | NI_NUMERICSERV;
+
+    status = getnameinfo(&raddr, rlen, r->host, sizeof(host), r->port, sizeof(port), flags);
+    if( status != 0){
+            fprintf(stderr, "Unable to lookup request: %s\n", gai_strerror(status));
+            return NULL;
+    }
+    debug("Client information lookup successful");
+
+    /* TODO Open socket stream */
+
+    r->stream = fdopen(r->fd, "w+");
+    if(!r->stream){
+        fprintf(stderr, "Unable to open socket stream: %s\n", strerror(errno));
+        close(client_fd);
+    }
+    debug("Socket stream opened");
 
     log("Accepted request from %s:%s", r->host, r->port);
     return r;
 
 fail:
     /* Deallocate request struct */
+
+    free_request(r);
+
     return NULL;
 }
 
@@ -65,13 +101,51 @@ void free_request(Request *r) {
     	return;
     }
 
-    /* Close socket or fd */
+    /* TODO Close socket or fd */
 
-    /* Free allocated strings */
+    if(fclose(r->stream) < 0){ // if FILE close it else close fd
+        close(r->fd);
+    }
 
-    /* Free headers */
+    /* TODO Free allocated struct strings */
 
-    /* Free request */
+    if(r->method)   free(r->method);
+    if(r->uri)      free(r->uri);
+    if(r->path)     free(r->path);
+    if(r->query)    free(r->query);
+
+    /* TODO Free headers list */
+
+    if(r->headers){
+
+        Header* curr = r->headers;
+        Header* next;
+    
+        while(curr){
+
+            next = curr->next;
+            if(curr->name) free(curr->name);
+            if(curr->value) free(curr->value);
+
+            free(curr);
+
+            if(next)
+                curr = next;
+            else{
+                free(next);
+                break;
+            }
+
+        }
+
+    } else 
+        
+        free(headers);
+
+    /* TODO Free request */
+
+    free(r);
+
 }
 
 /**
@@ -84,9 +158,26 @@ void free_request(Request *r) {
  * headers, returning 0 on success, and -1 on error.
  **/
 int parse_request(Request *r) {
+
+    if(!r){
+        debug("No request to parse into");
+        return -1;
+    }
+
     /* Parse HTTP Request Method */
+    
+    int methodStatus = parse_request_method(r);
+    if(methodStatus < 0){
+        debug("Unable to parse headers: %s\n", strerror(errno))
+        return -1;
+    }
+
 
     /* Parse HTTP Requet Headers*/
+    int requestStatus = parse_request_method(r);
+    
+
+
     return 0;
 }
 
