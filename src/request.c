@@ -215,15 +215,33 @@ int parse_request_method(Request *r) {
 
     /* TODO Parse method and uri */
 
+    // GET RESOURCE HTTP/1.0
+    // GET /script.cgi?q=monkeys HTTP/1.0
+
     method = strtok(buffer, WHITESPACE);
+    // method = GET
     r->method = strdup(method);
 
-    uri = strtok(NULL, WHITESPACE);
+    char* resource = strtok(NULL, WHITESPACE); // want to parse the same buffer, uri = resource
+    // resource = /script.cgi?q=monkeys
 
-    
+    uri = strtok(resource, "?");
+    // uri = /script.cgi
 
+    if(uri)
+        r->uri = strdup(uri);
+    else
+        return -1;
 
-    /* Parse query from uri */
+    query = strtok(NULL, WHITESPACE);
+    // query = q=monkeys
+
+    if(query)
+        r->query = strdup(query);
+    else
+        return -1;
+
+    debug("method is: %s, query is: %s\n", method, query);
 
     /* Record method, uri, and query in request struct */
     debug("HTTP METHOD: %s", r->method);
@@ -270,6 +288,36 @@ int parse_request_headers(Request *r) {
     char *data;
 
     /* Parse headers from socket */
+
+    while(fgets(buffer, BUFSIZ, r->stream) && strlen(buffer) > 2){
+
+        // Allocate headers memory
+        curr = calloc(1, sizeof(Header));
+
+        chomp(buffer);
+
+        name = strtok(buffer, ":");
+        if(!name){
+            free(curr);
+            return -1;
+        }
+
+        value = strtok(NULL, WHITESPACE);
+        if(!value){
+            free(curr);
+            return -1;
+        }
+
+        value = skip_whitespace(value);
+        curr->name = strdup(name);
+        curr->value = strdup(value);
+
+        if(!(r->headers)) // first header
+            r->headers = curr;
+        else // has headers before it
+            curr->next = curr;
+
+    } 
 
 #ifndef NDEBUG
     for (Header *header = r->headers; header; header = header->next) {
