@@ -40,10 +40,36 @@ char * determine_mimetype(const char *path) {
 
     /* Find file extension */
 
+    ext = strchr(path, '.') + 1;
+    if(!ext){
+        debug("Unable to find file extension");
+        return NULL;
+    }
+
+    debug("Extension is: %s", ext);
+
+    fs = fopen(MimeTypesPath, "r");
+    if(!fs){
+        debug("Unable to open MimeTypesPath: %s", strerror(errno));
+        return NULL;
+    }
+
+    while(fgets(buffer, BUFSIZ, fs)){
+
+        chomp(buffer);
+
+        if( !buffer[0] || buffer[0] ) continue; // skip these lines
+
+        
+
+    }
+
+
+
     /* Open MimeTypesPath file */
 
     /* Scan file for matching file extensions */
-    return NULL;
+    return mimetype;
 }
 
 /**
@@ -63,6 +89,16 @@ char * determine_mimetype(const char *path) {
  * string must later be free'd.
  **/
 char * determine_request_path(const char *uri) {
+
+    char buffer[BUFSIZ];
+
+    char* path;
+
+
+
+
+
+
     return NULL;
 }
 
@@ -83,7 +119,10 @@ const char * http_status_string(Status status) {
         "418 I'm A Teapot",
     };
 
-    return NULL;
+    if(status < sizeof(Statues) / sizeof(char *))
+        return Statues[status];
+    else 
+        return NULL;
 }
 
 /**
