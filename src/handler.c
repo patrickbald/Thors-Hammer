@@ -30,7 +30,24 @@ Status handle_error(Request *request, Status status);
 Status  handle_request(Request *r) {
     Status result;
 
-    /* Parse request */
+    /* Parse request: parse_request_method*/
+
+    char buffer[BUFSIZ];
+    if(!fgets(buffer, BUFSIZ, r->stream))
+        return HTTP_STATUS_BAD_REQUEST;
+
+    char* method  = strtok(buffer, WHITESPACE);
+    char* uri    = strtok(NULL, WHITESPACE);
+
+    if(!method || !uri){
+        return HTTP_STATUS_BAD_REQUEST;
+    }
+
+    /* parse_request_headers - we have to split up into e value pairs, but for now skip */
+
+    while(fgets(buffer, BUFSIZ, r->stream) && strlen(buffer) > 2){
+        debug("Header is: %s", buffer);
+    }
 
     /* Determine request path */
     debug("HTTP REQUEST PATH: %s", r->path);
