@@ -93,7 +93,13 @@ const char * http_status_string(Status status) {
  * @return  Point to first whitespace character in s.
  **/
 char * skip_nonwhitespace(char *s) {
-    return s;
+
+    char* start = s;
+
+    while(start && !isspace(*start))
+        start++;
+
+    return start;
 }
 
 /**
@@ -103,7 +109,13 @@ char * skip_nonwhitespace(char *s) {
  * @return  Point to first non-whitespace character in s.
  **/
 char * skip_whitespace(char *s) {
-    return s;
+
+    char* start = s;
+
+    while(isspace(*start))
+        start++;
+
+    return start;
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */

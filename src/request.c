@@ -122,7 +122,7 @@ void free_request(Request *r) {
 
             next = curr->next;
             if(curr->name) free(curr->name);
-            if(curr->value) free(curr->value);
+            if(curr->data) free(curr->data);
 
             free(curr);
 
@@ -158,7 +158,7 @@ int parse_request(Request *r) {
     
     int methodStatus = parse_request_method(r);
     if(methodStatus < 0){
-        debug("Unable to parse request method:: %s\n", strerror(errno))
+        debug("Unable to parse request method:: %s", strerror(errno));
         return -1;
     }
 
@@ -166,7 +166,7 @@ int parse_request(Request *r) {
     /* TODO Parse HTTP Requet Headers*/
     int headersStatus = parse_request_headers(r);
     if(headersStatus < 0){
-        debug("Unable to parse request headers: %s\n", strerror(errno));
+        debug("Unable to parse request headers: %s", strerror(errno));
         return -1;
     }
 
@@ -232,7 +232,7 @@ int parse_request_method(Request *r) {
     if(query)
         r->query = strdup(query);
 
-    debug("method is: %s, query is: %s\n", method, query);
+    debug("method is: %s, query is: %s", method, query);
 
     /* Record method, uri, and query in request struct */
     debug("HTTP METHOD: %s", r->method);
@@ -298,18 +298,18 @@ int parse_request_headers(Request *r) {
             return -1;
         }
 
-        value = strtok(NULL, WHITESPACE);
-        if(!value){
+        data = strtok(NULL, WHITESPACE);
+        if(!data){
             free(curr);
             return -1;
         }
 
-        value = skip_whitespace(value);
+        data = skip_whitespace(data);
         curr->name = strdup(name);
-        curr->value = strdup(value);
+        curr->data = strdup(data);
 
-        debug("current name: %s\n", curr->name);
-        debug("current value: %s\n", curr->value);
+        debug("current name: %s", curr->name);
+        debug("current data: %s", curr->data);
 
         if(!(r->headers)){ // first header
             r->headers = curr;

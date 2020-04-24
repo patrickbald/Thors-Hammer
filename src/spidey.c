@@ -91,6 +91,10 @@ int main(int argc, char *argv[]) {
     /* Parse command line options */
 
     /* Listen to server socket */
+    int server_fd = socket_listen(Port);
+    if(server_fd < 0){
+        return EXIT_FAILURE;
+    }
 
     /* Determine real RootPath */
     log("Listening on port %s", Port);
@@ -100,7 +104,10 @@ int main(int argc, char *argv[]) {
     debug("ConcurrencyMode = %s", mode == SINGLE ? "Single" : "Forking");
 
     /* Start either forking or single HTTP server */
-    return status;
+
+    single_server(server_fd);
+
+    return 0; // return status;
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */

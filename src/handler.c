@@ -30,24 +30,22 @@ Status handle_error(Request *request, Status status);
 Status  handle_request(Request *r) {
     Status result;
 
-    /* Parse request: parse_request_method*/
+    /* Parse request */
 
-    char buffer[BUFSIZ];
-    if(!fgets(buffer, BUFSIZ, r->stream))
-        return HTTP_STATUS_BAD_REQUEST;
+    int parseStatus = parse_request(r);
 
-    char* method  = strtok(buffer, WHITESPACE);
-    char* uri    = strtok(NULL, WHITESPACE);
-
-    if(!method || !uri){
-        return HTTP_STATUS_BAD_REQUEST;
+    if(parseStatus < 0){
+       debug("Unable to parse request: %s", strerror(errno));
+        handle_error(r, HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
 
-    /* parse_request_headers - we have to split up into e value pairs, but for now skip */
 
-    while(fgets(buffer, BUFSIZ, r->stream) && strlen(buffer) > 2){
-        debug("Header is: %s", buffer);
-    }
+    fprintf(r->stream, "HTTP/1.0 200 OK\r\n");
+    fprintf(r->stream, "Content-Type: text/html\r\n");
+    fprintf(r->stream, "\r\n");
+
+    fprintf(r->stream, "<h1> Moon men  </h1>");
+
 
     /* Determine request path */
     debug("HTTP REQUEST PATH: %s", r->path);
@@ -105,6 +103,10 @@ Status  handle_file_request(Request *r) {
     /* Determine mimetype */
 
     /* Write HTTP Headers with OK status and determined Content-Type */
+
+    // test
+    fprintf(r->stream, "HTTP1/0 200 OK\r\n"); 
+    fprintf(r->stream, "Content-Type: text/html\r\n");
 
     /* Read from file and write to socket in chunks */
 
