@@ -126,18 +126,11 @@ void free_request(Request *r) {
 
             free(curr);
 
-            if(next)
-                curr = next;
-            else{
-                free(next);
-                break;
-            }
+            curr = next;
 
         }
 
-    } else 
-        
-        free(headers);
+    }
 
     /* TODO Free request */
 
@@ -165,15 +158,15 @@ int parse_request(Request *r) {
     
     int methodStatus = parse_request_method(r);
     if(methodStatus < 0){
-        debug("Unable to parse headers: %s\n", strerror(errno))
+        debug("Unable to parse request method:: %s\n", strerror(errno))
         return -1;
     }
 
 
     /* TODO Parse HTTP Requet Headers*/
-    int requestStatus = parse_request_method(r);
-    if(requestStatus < 0){
-        debug("Unable to parse request: %s\n", strerror(errno));
+    int headersStatus = parse_request_headers(r);
+    if(headersStatus < 0){
+        debug("Unable to parse request headers: %s\n", strerror(errno));
         return -1;
     }
 
@@ -207,7 +200,7 @@ int parse_request_method(Request *r) {
 
     if(!fgets(buffer, BUFSIZ, r->stream)){
             debug("Unable to read line from socket");
-            return -1;
+            goto fail;
     }
 
     /* TODO Parse method and uri */
@@ -227,16 +220,17 @@ int parse_request_method(Request *r) {
 
     if(uri)
         r->uri = strdup(uri);
-    else
-        return -1;
+    else {
+        r->uri = strdup(resource);
+        return 0;
+    }
+    
 
     query = strtok(NULL, WHITESPACE);
     // query = q=monkeys
 
     if(query)
         r->query = strdup(query);
-    else
-        return -1;
 
     debug("method is: %s, query is: %s\n", method, query);
 
@@ -284,6 +278,8 @@ int parse_request_headers(Request *r) {
     char *name;
     char *data;
 
+    Header* tail = NULL;
+
     /* Parse headers from socket */
 
     while(fgets(buffer, BUFSIZ, r->stream) && strlen(buffer) > 2){
@@ -291,7 +287,7 @@ int parse_request_headers(Request *r) {
         // Allocate headers memory
         curr = calloc(1, sizeof(Header));
         if(!curr){
-            
+           return -1; 
         }
 
         chomp(buffer);
@@ -315,12 +311,15 @@ int parse_request_headers(Request *r) {
         debug("current name: %s\n", curr->name);
         debug("current value: %s\n", curr->value);
 
-        if(!(r->headers)) // first header
+        if(!(r->headers)){ // first header
             r->headers = curr;
-        else // has headers before it
-            curr->next = curr;
+            tail = curr;
+        } else { // has headers before it
+            tail->next = curr;
+            tail = curr;
+        }
 
-    } 
+    }  
 
 #ifndef NDEBUG
     for (Header *header = r->headers; header; header = header->next) {
