@@ -28,48 +28,46 @@ int parse_request_headers(Request *r);
  * The returned request struct must be deallocated using free_request.
  **/
 Request * accept_request(int sfd) {
-    Request *r;
-    struct sockaddr raddr;
-    socklen_t rlen;
+    
 
     /* TODO Allocate request struct (zeroed) */
 
-    rlen = sizeof(raddr);
-    r = calloc(1, sizeof(Request));
+    Request* r = calloc(1, sizeof(Request));
 
-    if(!r)
-        return NULL;
+    if(!r){
+        debug("Unable to allocate request: %s", strerror(errno));
+        goto fail;
+    }
 
     /* TODO Accept a client */
 
-    int client_fd = accept(sfd, &raddr, &rlen);
-    if(client_fd < 0){
-        fprintf(stderr, "Unable to accept: %s\n", strerror(errno));
-        return NULL;
+    struct sockaddr raddr;
+    socklen_t rlen = sizeof(struct sockaddr);
+
+    r->fd= accept(sfd, &raddr, &rlen);
+    if(r->fd < 0){
+        debug("Unable to accept: %s", strerror(errno));
+        goto fail;
     }
     debug("Client accepted");
 
-    r->fd = client_fd;
-
     /* TODO Lookup client information */
 
-    char host[NI_MAXHOST];
-    char port[NI_MAXSERV];
-    int flags = NI_NUMERICHOST | NI_NUMERICSERV;
+    int flags = NI_NUMERICHOST | NI_NUMERICSERV; // combine flags
 
-    status = getnameinfo(&raddr, rlen, r->host, sizeof(host), r->port, sizeof(port), flags);
-    if( status != 0){
-            fprintf(stderr, "Unable to lookup request: %s\n", gai_strerror(status));
-            return NULL;
+    // store name of client in r->host
+    int status = getnameinfo(&raddr, rlen, r->host, sizeof(r->host), r->port, sizeof(r->port), flags);
+    if( status < 0){
+            debug("Unable to lookup request: %s", gai_strerror(status));
+            goto fail;
     }
-    debug("Client information lookup successful");
 
     /* TODO Open socket stream */
 
-    r->stream = fdopen(r->fd, "w+");
+    r->stream = fdopen(r->fd, "w+"); // convert file descriptor into file stream
     if(!r->stream){
-        fprintf(stderr, "Unable to open socket stream: %s\n", strerror(errno));
-        close(client_fd);
+        debug("Unable to open socket stream: %s", strerror(errno));
+        goto fail;
     }
     debug("Socket stream opened");
 
@@ -79,8 +77,7 @@ Request * accept_request(int sfd) {
 fail:
     /* Deallocate request struct */
 
-    free_request(r);
-
+    free_request(r); // closes file in this func
     return NULL;
 }
 
@@ -293,6 +290,9 @@ int parse_request_headers(Request *r) {
 
         // Allocate headers memory
         curr = calloc(1, sizeof(Header));
+        if(!curr){
+            
+        }
 
         chomp(buffer);
 
