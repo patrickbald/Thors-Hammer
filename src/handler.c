@@ -44,10 +44,13 @@ Status  handle_request(Request *r) {
     fprintf(r->stream, "Content-Type: text/html\r\n");
     fprintf(r->stream, "\r\n");
 
-    fprintf(r->stream, "<h1> Moon men  </h1>");
+    fprintf(r->stream, "<h1> hi ben  </h1>");
 
 
     /* Determine request path */
+
+    r->path = determine_request_path(r->uri);
+
     debug("HTTP REQUEST PATH: %s", r->path);
 
     /* Dispatch to appropriate request handler type based on file type */
@@ -73,9 +76,34 @@ Status  handle_browse_request(Request *r) {
 
     /* Open a directory for reading or scanning */
 
+    n = scandir(r->path, &entries, 0, alphasort);
+
+    if(n < 0){
+        debug("Unable to open directory: %s", strerror(errno));
+        return HTTP_STATUS_BAD_REQUEST;
+    }
+
     /* Write HTTP Header with OK Status and text/html Content-Type */
 
+    fprintf(r->stream, "HTTP/1.0 200 OK\r\n");
+    fprintf(r->stream, "Content-Type: text/html\r\n");
+    fprintf(r->stream, "\r\n");
+
     /* For each entry in directory, emit HTML list item */
+
+    // need to add more logic for links etc
+
+    for(int i = 0; i < n; i++){
+
+        if(strcmp(entries[i]->d_name, ".") == 0 || strcmp(entries[i]->d_name == "..")){
+            continue;
+        }
+
+        fprintf(r->stream, "<li>%s</li>", entries[i]->d_name);
+        free(entries[i]);
+    }
+
+    free(entries);
 
     /* Return OK */
     return HTTP_STATUS_OK;

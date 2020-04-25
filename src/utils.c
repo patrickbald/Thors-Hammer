@@ -54,21 +54,44 @@ char * determine_mimetype(const char *path) {
         return NULL;
     }
 
-    while(fgets(buffer, BUFSIZ, fs)){
+    bool searching = true;
+    fgets(buffer, BUFSIZ, fs);
+
+    while(searching && buffer){
 
         chomp(buffer);
 
         if( !buffer[0] || buffer[0] ) continue; // skip these lines
 
-        
+        token = strtok(skip_whitespace(skip_nonwhitespace(buffer)), WHITESPACE);
 
+        if(streq(token, ext)){
+            debug("Found ext in mime types: %s", token);
+            searching = false;
+            break;
+        }
+
+        while(token = strtok(NULL, WHITESPACE)){
+            if(streq(token, ext)){
+                debug("Found ext in mime types: %s", token);
+                searching = false;
+                break;
+            }
+        }
+
+        if(searching)
+            fgets(buffer, BUFSIZ, fs);
     }
 
+    mimetype = strtok(buffer, WHITESPACE);
 
+    if(!mimetype)
+        mimetype = DefaultMimeType;
 
-    /* Open MimeTypesPath file */
+    fclose(fs);
 
-    /* Scan file for matching file extensions */
+    debug("Full extension: %s", mimetype);
+
     return mimetype;
 }
 
@@ -92,14 +115,27 @@ char * determine_request_path(const char *uri) {
 
     char buffer[BUFSIZ];
 
-    char* path;
+    char path[BUFSIZ];
+    
+    int status = sprintf(path, "%s%s", RootPath, uri);
+    if(status < 0){
+        debug("Unable to merge RootPath and uri: %s", strerror(errno));
+        return NULL;
+    }
 
+    realpath(path, NULL);
 
+    if(!path){
+        debug("Path is null");
+        return NULL;
+    }
 
+    if(!strcmp(path, RootPath)){
+        debug("path doesnt start with rootpath");
+        return NULL;
+    }
 
-
-
-    return NULL;
+    return strdup(path);
 }
 
 /**
