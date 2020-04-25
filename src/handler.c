@@ -36,16 +36,8 @@ Status  handle_request(Request *r) {
 
     if(parseStatus < 0){
        debug("Unable to parse request: %s", strerror(errno));
-        handle_error(r, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+        return(handle_error(r, HTTP_STATUS_INTERNAL_SERVER_ERROR));
     }
-
-
-    fprintf(r->stream, "HTTP/1.0 200 OK\r\n");
-    fprintf(r->stream, "Content-Type: text/html\r\n");
-    fprintf(r->stream, "\r\n");
-
-    fprintf(r->stream, "<h1> hi ben  </h1>");
-
 
     /* Determine request path */
 
@@ -54,6 +46,9 @@ Status  handle_request(Request *r) {
     debug("HTTP REQUEST PATH: %s", r->path);
 
     /* Dispatch to appropriate request handler type based on file type */
+
+    result = handle_file_request(r);
+
     log("HTTP REQUEST STATUS: %s", http_status_string(result));
 
     return result;
@@ -95,7 +90,7 @@ Status  handle_browse_request(Request *r) {
 
     for(int i = 0; i < n; i++){
 
-        if(strcmp(entries[i]->d_name, ".") == 0 || strcmp(entries[i]->d_name == "..")){
+        if(strcmp(entries[i]->d_name, ".") == 0 || strcmp(entries[i]->d_name, "..") == 0){
             continue;
         }
 
@@ -128,21 +123,49 @@ Status  handle_file_request(Request *r) {
 
     /* Open file for reading */
 
+    fs = fopen(r->path, "r");
+    if(!fs){
+        debug("Unable to open file in handle file request");
+        goto fail;
+    }
+
     /* Determine mimetype */
+
+    mimetype = determine_mimetype(r->uri);
 
     /* Write HTTP Headers with OK status and determined Content-Type */
 
     // test
     fprintf(r->stream, "HTTP1/0 200 OK\r\n"); 
-    fprintf(r->stream, "Content-Type: text/html\r\n");
+    fprintf(r->stream, "Content-Type: %s\r\n", mimetype);
+    fprintf(r->stream, "\r\n");
+
+    //fprintf(r->stream, "<h1> test </h1>");
 
     /* Read from file and write to socket in chunks */
 
+    while(fgets(buffer, BUFSIZ, fs)){
+        
+        fprintf(r->stream, "%s", buffer);
+
+    }
+
+
     /* Close file, deallocate mimetype, return OK */
+
+    fclose(fs);
+
+    free(mimetype);
+
     return HTTP_STATUS_OK;
 
 fail:
     /* Close file, free mimetype, return INTERNAL_SERVER_ERROR */
+
+    if(fs) fclose(fs);
+
+    if(mimetype) free(mimetype);
+
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 }
 
@@ -188,8 +211,12 @@ Status  handle_error(Request *r, Status status) {
     const char *status_string = http_status_string(status);
 
     /* Write HTTP Header */
+    fprintf(r->stream, "HTTP/1.0 %s\r\n", status_string);
+    fprintf(r->stream, "Content-Type: text/html\r\n");
+    fprintf(r->stream, "\r\n");
 
     /* Write HTML Description of Error*/
+    fprintf(r->stream, "<h1> %s </h1>", status_string);
 
     /* Return specified status */
     return status;

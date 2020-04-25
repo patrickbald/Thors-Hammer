@@ -199,6 +199,7 @@ int parse_request_method(Request *r) {
     /* TODO Read line from socket */
 
     if(!fgets(buffer, BUFSIZ, r->stream)){
+            debug("r->stream is %p", r->stream);
             debug("Unable to read line from socket");
             goto fail;
     }
