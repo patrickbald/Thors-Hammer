@@ -31,7 +31,7 @@
  *
  * This function returns an allocated string that must be free'd.
  **/
-char * determine_mimetype(const char *path) {
+char * determine_mimetype(const char *path) { // r->path
     char *ext;
     char *mimetype;
     char *token;
@@ -40,7 +40,7 @@ char * determine_mimetype(const char *path) {
 
     /* Find file extension */
 
-    ext = strchr(path, '.') + 1;
+    ext = strchr(path, '.') + 1; // script.EXT
     if(!ext){
         debug("Unable to find file extension");
         return NULL;
@@ -57,11 +57,14 @@ char * determine_mimetype(const char *path) {
     bool searching = true;
     fgets(buffer, BUFSIZ, fs);
 
-    while(searching && buffer){
+    while(searching && buffer != NULL){ // fgets(buffer, BUFSIZ, fs) 
 
         chomp(buffer);
 
-        if( !buffer[0] || buffer[0] ) continue; // skip these lines
+        if( !buffer[0] || buffer[0]  == '#'){
+            fgets(buffer, BUFSIZ, fs);
+            continue; // skip these lines
+        }
 
         token = strtok(skip_whitespace(skip_nonwhitespace(buffer)), WHITESPACE);
 
@@ -71,7 +74,7 @@ char * determine_mimetype(const char *path) {
             break;
         }
 
-        while(token = strtok(NULL, WHITESPACE)){
+        while((token = strtok(NULL, WHITESPACE)) != NULL){
             if(streq(token, ext)){
                 debug("Found ext in mime types: %s", token);
                 searching = false;
@@ -92,7 +95,7 @@ char * determine_mimetype(const char *path) {
 
     debug("Full extension: %s", mimetype);
 
-    return mimetype;
+    return strdup(mimetype);
 }
 
 /**
@@ -114,23 +117,24 @@ char * determine_mimetype(const char *path) {
 char * determine_request_path(const char *uri) {
 
     char buffer[BUFSIZ];
-
     char path[BUFSIZ];
     
-    int status = sprintf(path, "%s%s", RootPath, uri);
+    int status = sprintf(buffer, "%s%s", RootPath, uri);
     if(status < 0){
         debug("Unable to merge RootPath and uri: %s", strerror(errno));
         return NULL;
     }
 
-    realpath(path, NULL);
+    realpath(buffer, path);
 
-    if(!path){
+    if(path == NULL){
         debug("Path is null");
         return NULL;
     }
 
-    if(!strcmp(path, RootPath)){
+    debug("path is: %s", path);
+
+    if(!strstr(path, RootPath)){
         debug("path doesnt start with rootpath");
         return NULL;
     }
@@ -155,8 +159,8 @@ const char * http_status_string(Status status) {
         "418 I'm A Teapot",
     };
 
-    if(status < sizeof(Statues) / sizeof(char *))
-        return Statues[status];
+    if(status < sizeof(StatusStrings) / sizeof(char *))
+        return StatusStrings[status];
     else 
         return NULL;
 }
