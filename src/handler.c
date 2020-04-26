@@ -47,6 +47,28 @@ Status  handle_request(Request *r) {
 
     /* Dispatch to appropriate request handler type based on file type */
 
+    /*
+    struct stat request_stat;
+
+    if(stat(r->path, &request_stat) < 0){
+        return(handle_error(r, HTTP_STATUS_BAD_REQUEST));
+    }
+
+    int haveAccess = access(r->path, R_OK | W_OK);
+
+    bool isDir = S_ISDIR(request_stat.st_mode);
+
+    bool isFile = S_ISREG(request_stat.st_mode);
+
+    if(isFile && haveAccess)
+        result = handle_file_request(r);
+    else if (isDir && haveAccess)
+        result = handle_browse_request(r);
+    else if(isCGI && haveAccess)
+        result = handle_cgi_request(r);
+
+    */
+
     result = handle_file_request(r);
 
     log("HTTP REQUEST STATUS: %s", http_status_string(result));
@@ -140,16 +162,16 @@ Status  handle_file_request(Request *r) {
     fprintf(r->stream, "Content-Type: %s\r\n", mimetype);
     fprintf(r->stream, "\r\n");
 
-    //fprintf(r->stream, "<h1> test </h1>");
-
     /* Read from file and write to socket in chunks */
 
-    while(fgets(buffer, BUFSIZ, fs)){
+    nread = fread(buffer, 1, BUFSIZ, fs);
+
+    while( nread > 0 ){
         
-        fprintf(r->stream, "%s", buffer);
+        fwrite(buffer, 1, nread, r->stream);
+        nread = fread(buffer, 1, BUFSIZ, fs);
 
     }
-
 
     /* Close file, deallocate mimetype, return OK */
 
