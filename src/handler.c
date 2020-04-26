@@ -47,29 +47,26 @@ Status  handle_request(Request *r) {
 
     /* Dispatch to appropriate request handler type based on file type */
 
-    /*
     struct stat request_stat;
 
     if(stat(r->path, &request_stat) < 0){
         return(handle_error(r, HTTP_STATUS_BAD_REQUEST));
     }
 
-    int haveAccess = access(r->path, R_OK | W_OK);
-
-    bool isDir = S_ISDIR(request_stat.st_mode);
-
-    bool isFile = S_ISREG(request_stat.st_mode);
-
-    if(isFile && haveAccess)
-        result = handle_file_request(r);
-    else if (isDir && haveAccess)
+    if(S_ISDIR(request_stat.st_mode)){
+        debug("Handle directory request");
         result = handle_browse_request(r);
-    else if(isCGI && haveAccess)
+    } 
+    else if (access(r->path, X_OK) == 0){
+        debug("Handle CGI request");
         result = handle_cgi_request(r);
-
-    */
-
-    result = handle_file_request(r);
+    }
+    else if(access(r->path, R_OK) == 0){
+        debug("Handle file request");
+        result = handle_file_request(r);
+    } 
+    else
+        return(handle_error(r, HTTP_STATUS_BAD_REQUEST));
 
     log("HTTP REQUEST STATUS: %s", http_status_string(result));
 
@@ -108,17 +105,19 @@ Status  handle_browse_request(Request *r) {
 
     /* For each entry in directory, emit HTML list item */
 
-    // need to add more logic for links etc
+    fprintf(r->stream, "<ul>");
 
     for(int i = 0; i < n; i++){
 
-        if(strcmp(entries[i]->d_name, ".") == 0 || strcmp(entries[i]->d_name, "..") == 0){
-            continue;
-        }
+        if(strcmp(&r->uri[strlen(r->uri) - 1], "/"))
+            fprintf(r->stream, "<li><a href=\"%s/%s\">%s</a></li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
+        else
+            fprintf(r->stream, "<li><a href=\"%s%s\">%s</a></li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
 
-        fprintf(r->stream, "<li>%s</li>", entries[i]->d_name);
         free(entries[i]);
     }
+
+    fprintf(r->stream, "</ul>");
 
     free(entries);
 
