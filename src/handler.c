@@ -31,7 +31,6 @@ Status  handle_request(Request *r) {
     Status result;
 
     /* Parse request */
-
     int parseStatus = parse_request(r);
 
     if(parseStatus < 0){
@@ -40,12 +39,9 @@ Status  handle_request(Request *r) {
     }
 
     /* Determine request path */
-
     r->path = determine_request_path(r->uri);
 
-    if(!r->path){
-        return handle_error(r, HTTP_STATUS_NOT_FOUND);
-    }
+    if(!r->path) return handle_error(r, HTTP_STATUS_NOT_FOUND);
 
     debug("HTTP REQUEST PATH: %s", r->path);
 
@@ -113,11 +109,12 @@ Status  handle_browse_request(Request *r) {
     fprintf(r->stream, "<html>\n");
     fprintf(r->stream, "<head>\n");
     fprintf(r->stream, "<meta charset=\"utf-8\">\n");
+    fprintf(r->stream, "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css\" integrity=\"sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm\" crossorigin=\"anonymous\">\n");
     fprintf(r->stream, "</head>\n");
     fprintf(r->stream, "<body>\n");
     
 
-    fprintf(r->stream, "<ul>");
+    fprintf(r->stream, "<ul class=\"list-group\">");
 
     for(int i = 0; i < n; i++){
 
@@ -126,10 +123,12 @@ Status  handle_browse_request(Request *r) {
             continue;
         }
 
-        if(r->uri[strlen(r->uri) - 1] == '/')
-            fprintf(r->stream, "<li>\n<a href=\"%s%s\">%s</a>\n</li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
-        else
-            fprintf(r->stream, "<li>\n<a href=\"%s/%s\">%s</a>\n</li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
+        if(r->uri[strlen(r->uri) - 1] == '/'){ // has / at the end of uri
+            fprintf(r->stream, "<li class=\"list-group-item\">\n<a href=\"%s%s\">%s</a>\n</li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
+        }
+        else{ // need to put / at end of uri
+            fprintf(r->stream, "<li class=\"list-group-item\">\n<a href=\"%s/%s\">%s</a>\n</li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
+        }
 
         free(entries[i]);
     }
@@ -156,9 +155,9 @@ Status  handle_browse_request(Request *r) {
  * HTTP_STATUS_NOT_FOUND.
  **/
 Status  handle_file_request(Request *r) {
-    FILE *fs;
-    char buffer[BUFSIZ];
-    char *mimetype = NULL;
+    FILE   *fs;
+    char   buffer[BUFSIZ];
+    char   *mimetype = NULL;
     size_t nread;
 
     /* Open file for reading */
@@ -173,8 +172,7 @@ Status  handle_file_request(Request *r) {
 
     mimetype = determine_mimetype(r->path); // changed from r->uri @ 9:17 workingo
 
-    if(!mimetype)
-        goto fail;
+    if(!mimetype) goto fail;
 
     /* Write HTTP Headers with OK status and determined Content-Type */
 
@@ -307,7 +305,15 @@ Status  handle_error(Request *r, Status status) {
     fprintf(r->stream, "\r\n");
 
     /* Write HTML Description of Error*/
-    fprintf(r->stream, "<h1>%s</h1>", status_string);
+
+    char* theWay = "https://i0.wp.com/tommyeturnertalks.com/wp-content/uploads/2019/12/mandalorian-episode-5-release-time-disney-plus.jpeg?fit=1300%2C651&ssl=1";
+
+    fprintf(r->stream, "<center>\n");
+    fprintf(r->stream, "<h1 class=\"display-1\">%s</h1>", status_string);
+    fprintf(r->stream, "<h2 class=\"display-2\">This is not the way</h2>\n");
+    fprintf(r->stream, "<img src=\"%s\">\n", theWay);
+    fprintf(r->stream, "</center>");
+
 
     /* Return specified status */
     return status; // changed from status 3:39 sunday
