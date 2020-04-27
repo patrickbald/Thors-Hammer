@@ -105,19 +105,31 @@ Status  handle_browse_request(Request *r) {
 
     /* For each entry in directory, emit HTML list item */
 
-    fprintf(r->stream, "<ul>");
+    fprintf(r->stream, "<!DOCTYPE html>\n");
+    fprintf(r->stream, "<html>\n");
+    fprintf(r->stream, "<head>\n");
+    fprintf(r->stream, "<meta charset=\"utf-8\">\n");
+    fprintf(r->stream, "</head>\n");
+    fprintf(r->stream, "<body>\n");
+    
+
+    fprintf(r->stream, "<ul type=\"circle\">");
 
     for(int i = 0; i < n; i++){
 
-        if(strcmp(&r->uri[strlen(r->uri) - 1], "/"))
-            fprintf(r->stream, "<li><a href=\"%s/%s\">%s</a></li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
+        if(strcmp(entries[i]->d_name, ".") == 0) continue;
+
+        if(r->uri[strlen(r->uri) - 1] == '/')
+            fprintf(r->stream, "<li>\n<a href=\"%s%s\">%s</a>\n</li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
         else
-            fprintf(r->stream, "<li><a href=\"%s%s\">%s</a></li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
+            fprintf(r->stream, "<li>\n<a href=\"%s/%s\">%s</a>\n</li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
 
         free(entries[i]);
     }
 
     fprintf(r->stream, "</ul>");
+    fprintf(r->stream, "</body>");
+    fprintf(r->stream, "</html>");
 
     free(entries);
 
@@ -157,7 +169,7 @@ Status  handle_file_request(Request *r) {
     /* Write HTTP Headers with OK status and determined Content-Type */
 
     // test
-    fprintf(r->stream, "HTTP1/0 200 OK\r\n"); 
+    fprintf(r->stream, "HTTP/1.0 200 OK\r\n"); 
     fprintf(r->stream, "Content-Type: %s\r\n", mimetype);
     fprintf(r->stream, "\r\n");
 
@@ -208,14 +220,63 @@ Status  handle_cgi_request(Request *r) {
 
     /* Export CGI environment variables from request:
      * http://en.wikipedia.org/wiki/Common_Gateway_Interface */
+    
+    setenv("DOCUMENT_ROOT", RootPath, true ); // overwrite
+    setenv("QUERY_STRING", r->query, true);
+    setenv("REMOTE_ADDR", r->host, true);
+    setenv("REMOTE_PORT", r->port, true);
+    setenv("REQUEST_URI", r->uri, true);
+    setenv("REQUEST_METHOD", r->method, true);
+    setenv("SCRIPT_FILENAME", r->path, true);
+    setenv("SERVER_PORT", Port, true);
 
     /* Export CGI environment variables from request headers */
 
+    for(Header* tmp = r->headers; tmp; tmp = tmp->next){
+
+        if(streq(tmp->name, "Host")){
+            setenv("HTTP_HOST", tmp->data, true);
+        }
+        else if (streq(tmp->name, "Connection")){
+            setenv("HTTP_CONNECTION", tmp->data, true);
+        }
+        else if (streq(tmp->name, "Accept")){
+            setenv("HTTP_ACCEPT", tmp->data, true);
+        }
+        else if (streq(tmp->name, "Accept-Language")){
+            setenv("HTTP_ACCEPT_LANGUAGE", tmp->data, true);
+        }
+        else if (streq(tmp->name, "Accept-Encoding")){
+            setenv("HTTP_ACCEPT_ENCODING", tmp->data, true);
+        }
+        else if(streq(tmp->name, "User-Agent")){
+            setenv("HTTP_USER_AGENT", tmp->data, true);
+        }
+
+    }
+
+
+
     /* POpen CGI Script */
+    pfs = popen(r->path, "r");
+
+    debug("query is: %s", r->query);
+
+    if(!pfs){
+        debug("Unable to open CGI");
+        return HTTP_STATUS_NOT_FOUND;
+    }
 
     /* Copy data from popen to socket */
 
+    while(fgets(buffer, BUFSIZ, pfs)){
+        fputs(buffer, r->stream);
+    }
+
+
     /* Close popen, return OK */
+    pclose(pfs);
+
     return HTTP_STATUS_OK;
 }
 
@@ -240,7 +301,7 @@ Status  handle_error(Request *r, Status status) {
     fprintf(r->stream, "<h1> %s </h1>", status_string);
 
     /* Return specified status */
-    return status;
+    return status; // changed from status 3:39 sunday
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
