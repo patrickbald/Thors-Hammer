@@ -36,12 +36,16 @@ Status  handle_request(Request *r) {
 
     if(parseStatus < 0){
        debug("Unable to parse request: %s", strerror(errno));
-        return handle_error(r, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+        return handle_error(r, HTTP_STATUS_BAD_REQUEST);
     }
 
     /* Determine request path */
 
     r->path = determine_request_path(r->uri);
+
+    if(!r->path){
+        return handle_error(r, HTTP_STATUS_NOT_FOUND);
+    }
 
     debug("HTTP REQUEST PATH: %s", r->path);
 
@@ -50,7 +54,7 @@ Status  handle_request(Request *r) {
     struct stat request_stat;
 
     if(stat(r->path, &request_stat) < 0){
-        return handle_error(r, HTTP_STATUS_BAD_REQUEST);
+        return handle_error(r, HTTP_STATUS_NOT_FOUND);
     }
 
     if(S_ISDIR(request_stat.st_mode)){

@@ -18,24 +18,24 @@ int single_server(int sfd) {
     while (true) {
     	/* Accept request */
 
-        Request *request = accept_request(sfd);
-        if(!request){
+        Request *r = accept_request(sfd);
+        if(!r){
             log("Unable to accept request: %s\n", strerror(errno));
             continue;
         }
 
-
-
 	/* Handle request */
-        handle_request(request);
-
+        handle_request(r);
 
 	/* Free request */
-        free_request(request);
+        free_request(r);
 
     }
 
     /* Close server socket */
+
+    close(sfd);
+
     return EXIT_SUCCESS;
 }
 

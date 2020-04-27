@@ -22,9 +22,32 @@ int forking_server(int sfd) {
     while (true) {
     	/* Accept request */
 
+        Request* r = accept_request(sfd);
+
 	/* Ignore children */
 
+        signal(SIGCHLD, SIG_IGN);
+
 	/* Fork off child process to handle request */
+
+        pid_t pid = fork();
+
+        if(pid < 0){
+            debug("Fork has failed %s", strerror(errno));
+            free_request(r);
+            continue;
+        }
+
+        if(pid == 0){ // child
+            debug("handling client request");
+            close(sfd);
+            Status s = handle_request(r);
+            exit(s);
+        } else { // parent process
+            // close(sfd);
+            free_request(r); // TODO takes request structure as argument 
+        }
+
     }
 
     /* Close server socket */

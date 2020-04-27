@@ -212,26 +212,40 @@ int parse_request_method(Request *r) {
     method = strtok(buffer, WHITESPACE);
     // method = GET
     r->method = strdup(method);
+    debug("method is: %s", r->method);
 
-    char* resource = strtok(NULL, WHITESPACE); // want to parse the same buffer, uri = resource
-    // resource = /script.cgi?q=monkeys
+    // char* resource = strtok(NULL, WHITESPACE); // want to parse the same buffer, uri = resource
+    uri = strtok(NULL, WHITESPACE);
+    debug("initial uri: %s", uri);
 
-    uri = strtok(resource, "?");
-    // uri = /script.cgi
+    query = strtok(uri, "?");
+    query = strtok(NULL, WHITESPACE);
+    debug("searching for query: %s", query);
 
-    if(uri)
-        r->uri = strdup(uri);
-    else {
-        r->uri = strdup(resource);
-        return 0;
+    if(query){
+        r->query = strdup(query);
+    } else {
+        query = " ";
+        r->query = strdup(query);
+        // return 0;
     }
     
-
+    /*
     query = strtok(NULL, WHITESPACE);
     // query = q=monkeys
 
     if(query)
         r->query = strdup(query);
+
+    */
+
+    uri = strtok(uri, "?");
+    debug("uri is: %s", uri);
+
+    if(uri)
+        r->uri = strdup(uri);
+    else
+        goto fail;
 
     debug("method is: %s, query is: %s", method, query);
 
@@ -243,6 +257,10 @@ int parse_request_method(Request *r) {
     return 0;
 
 fail:
+    debug("Failed to parse");
+    debug("HTTP METHOD: %s", r->method);
+    debug("HTTP URI:    %s", r->uri);
+    debug("HTTP QUERY:  %s", r->query);
     return -1;
 }
 
@@ -295,14 +313,12 @@ int parse_request_headers(Request *r) {
 
         name = strtok(buffer, ":");
         if(!name){
-            free(curr);
-            return -1;
+            goto fail;
         }
 
         data = strtok(NULL, WHITESPACE);
         if(!data){
-            free(curr);
-            return -1;
+            goto fail;
         }
 
         data = skip_whitespace(data);
@@ -330,6 +346,7 @@ int parse_request_headers(Request *r) {
     return 0;
 
 fail:
+    free(curr);
     return -1;
 }
 

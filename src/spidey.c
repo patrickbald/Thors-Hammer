@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 /* Global Variables */
-char *Port	      = "9898";
+char *Port	      = "9424";
 char *MimeTypesPath   = "/etc/mime.types";
 char *DefaultMimeType = "text/plain";
 char *RootPath	      = "www";
@@ -90,13 +90,23 @@ int main(int argc, char *argv[]) {
 
     /* Parse command line options */
 
+    bool parsed = parse_options(argc, argv, &mode);
+    if(!parsed){
+        debug("Unable to parse command line options: %s", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
     /* Listen to server socket */
     int server_fd = socket_listen(Port);
     if(server_fd < 0){
+        debug("Listen to socket failure");
         return EXIT_FAILURE;
     }
 
     /* Determine real RootPath */
+
+    RootPath = realpath(RootPath, NULL); // TODO 
+
     log("Listening on port %s", Port);
     debug("RootPath        = %s", RootPath);
     debug("MimeTypesPath   = %s", MimeTypesPath);
@@ -105,7 +115,13 @@ int main(int argc, char *argv[]) {
 
     /* Start either forking or single HTTP server */
 
-    single_server(server_fd);
+    if(mode == FORKING)
+        forking_server(server_fd);
+    else
+        single_server(server_fd);
+
+    // TODO free rootpath
+    free(RootPath);
 
     return 0; // return status;
 }
