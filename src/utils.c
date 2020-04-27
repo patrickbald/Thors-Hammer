@@ -40,7 +40,7 @@ char * determine_mimetype(const char *path) { // r->path
 
     /* Find file extension */
 
-    ext = strchr(path, '.'); // script.EXT
+    ext = strchr(path, '.');
     if(!ext){
         debug("Unable to find file extension");
         return strdup(DefaultMimeType);
@@ -54,47 +54,10 @@ char * determine_mimetype(const char *path) { // r->path
         return strdup(DefaultMimeType);
     }
 
-    /*
-    bool searching = true;
-    fgets(buffer, BUFSIZ, fs);
 
-    while(searching && buffer != NULL){ // fgets(buffer, BUFSIZ, fs) 
-
-        chomp(buffer);
-
-        if( !buffer[0] || buffer[0]  == '#'){
-            fgets(buffer, BUFSIZ, fs);
-            continue; // skip these lines
-        }
-
-        token = strtok(skip_whitespace(skip_nonwhitespace(buffer)), WHITESPACE);
-
-        if(streq(token, ext)){
-            debug("Found ext in mime types: %s", token);
-            searching = false;
-            break;
-        }
-
-        while((token = strtok(NULL, WHITESPACE)) != NULL){
-            if(streq(token, ext)){
-                debug("Found ext in mime types: %s", token);
-                searching = false;
-                break;
-            }
-        }
-
-        if(searching)
-            fgets(buffer, BUFSIZ, fs);
-    }
-
-    */
-
-    ext = ext + 1;
+    ext++; // move extension past . if exists
 
     while(fgets(buffer, BUFSIZ, fs)){
-
-        // chomp(buffer);
-        //debug("buffer is: %s", buffer);
 
         if(buffer == NULL || buffer[0] == '#' || strlen(buffer) < 2) continue;
 
@@ -110,8 +73,6 @@ char * determine_mimetype(const char *path) { // r->path
         token = strtok(token, WHITESPACE);
 
         if(!token) continue;
-
-        // token = strtok(skip_whitespace(skip_nonwhitespace(buffer)), WHITESPACE);
 
         if(streq(token, ext)){
             fclose(fs);
@@ -130,21 +91,6 @@ char * determine_mimetype(const char *path) { // r->path
 
     fclose(fs);
     return strdup(DefaultMimeType);
-          
-  /*
-found:
-
-    mimetype = strtok(buffer, WHITESPACE);
-
-    if(!mimetype)
-        mimetype = DefaultMimeType;
-
-    fclose(fs);
-
-    debug("Full extension: %s", mimetype);
-
-    return strdup(mimetype);
-    */
 }
 
 /**
@@ -183,7 +129,7 @@ char * determine_request_path(const char *uri) {
 
     debug("path is: %s", path);
 
-    if(!strstr(path, RootPath)){
+    if(!strstr(path, RootPath)){ // changed from strstr monday 1:37am
         debug("path doesnt start with rootpath");
         return NULL;
     }
@@ -221,7 +167,6 @@ const char * http_status_string(Status status) {
  * @return  Point to first whitespace character in s.
  **/
 char * skip_nonwhitespace(char *s) {
-
     char* start = s;
 
     while(start && !isspace(*start))
