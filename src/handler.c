@@ -36,7 +36,7 @@ Status  handle_request(Request *r) {
 
     if(parseStatus < 0){
        debug("Unable to parse request: %s", strerror(errno));
-        return(handle_error(r, HTTP_STATUS_INTERNAL_SERVER_ERROR));
+        return handle_error(r, HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
 
     /* Determine request path */
@@ -50,7 +50,7 @@ Status  handle_request(Request *r) {
     struct stat request_stat;
 
     if(stat(r->path, &request_stat) < 0){
-        return(handle_error(r, HTTP_STATUS_BAD_REQUEST));
+        return handle_error(r, HTTP_STATUS_BAD_REQUEST);
     }
 
     if(S_ISDIR(request_stat.st_mode)){
@@ -66,7 +66,7 @@ Status  handle_request(Request *r) {
         result = handle_file_request(r);
     } 
     else
-        return(handle_error(r, HTTP_STATUS_BAD_REQUEST));
+        return HTTP_STATUS_BAD_REQUEST;
 
     log("HTTP REQUEST STATUS: %s", http_status_string(result));
 
@@ -90,7 +90,7 @@ Status  handle_browse_request(Request *r) {
 
     /* Open a directory for reading or scanning */
 
-    n = scandir(r->path, &entries, 0, alphasort);
+    n = scandir(r->path, &entries, NULL, alphasort);
 
     if(n < 0){
         debug("Unable to open directory: %s", strerror(errno));
@@ -113,11 +113,14 @@ Status  handle_browse_request(Request *r) {
     fprintf(r->stream, "<body>\n");
     
 
-    fprintf(r->stream, "<ul type=\"circle\">");
+    fprintf(r->stream, "<ul>");
 
     for(int i = 0; i < n; i++){
 
-        if(strcmp(entries[i]->d_name, ".") == 0) continue;
+        if(strcmp(entries[i]->d_name, ".") == 0){
+            free(entries[i]);
+            continue;
+        }
 
         if(r->uri[strlen(r->uri) - 1] == '/')
             fprintf(r->stream, "<li>\n<a href=\"%s%s\">%s</a>\n</li>\n", r->uri, entries[i]->d_name, entries[i]->d_name);
@@ -159,16 +162,18 @@ Status  handle_file_request(Request *r) {
     fs = fopen(r->path, "r");
     if(!fs){
         debug("Unable to open file in handle file request");
-        goto fail;
+        return handle_error(r, HTTP_STATUS_NOT_FOUND);
     }
 
     /* Determine mimetype */
 
-    mimetype = determine_mimetype(r->uri);
+    mimetype = determine_mimetype(r->path); // changed from r->uri @ 9:17 workingo
+
+    if(!mimetype)
+        goto fail;
 
     /* Write HTTP Headers with OK status and determined Content-Type */
 
-    // test
     fprintf(r->stream, "HTTP/1.0 200 OK\r\n"); 
     fprintf(r->stream, "Content-Type: %s\r\n", mimetype);
     fprintf(r->stream, "\r\n");
@@ -264,7 +269,7 @@ Status  handle_cgi_request(Request *r) {
 
     if(!pfs){
         debug("Unable to open CGI");
-        return HTTP_STATUS_NOT_FOUND;
+        return HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
 
     /* Copy data from popen to socket */
@@ -298,7 +303,7 @@ Status  handle_error(Request *r, Status status) {
     fprintf(r->stream, "\r\n");
 
     /* Write HTML Description of Error*/
-    fprintf(r->stream, "<h1> %s </h1>", status_string);
+    fprintf(r->stream, "<h1>%s</h1>", status_string);
 
     /* Return specified status */
     return status; // changed from status 3:39 sunday

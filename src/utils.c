@@ -35,15 +35,15 @@ char * determine_mimetype(const char *path) { // r->path
     char *ext;
     char *mimetype;
     char *token;
-    char buffer[BUFSIZ];
+    char buffer[BUFSIZ] = {0};
     FILE *fs = NULL;
 
     /* Find file extension */
 
-    ext = strchr(path, '.') + 1; // script.EXT
+    ext = strchr(path, '.'); // script.EXT
     if(!ext){
         debug("Unable to find file extension");
-        return NULL;
+        return strdup(DefaultMimeType);
     }
 
     debug("Extension is: %s", ext);
@@ -51,9 +51,10 @@ char * determine_mimetype(const char *path) { // r->path
     fs = fopen(MimeTypesPath, "r");
     if(!fs){
         debug("Unable to open MimeTypesPath: %s", strerror(errno));
-        return NULL;
+        return strdup(DefaultMimeType);
     }
 
+    /*
     bool searching = true;
     fgets(buffer, BUFSIZ, fs);
 
@@ -86,6 +87,53 @@ char * determine_mimetype(const char *path) { // r->path
             fgets(buffer, BUFSIZ, fs);
     }
 
+    */
+
+    ext = ext + 1;
+
+    while(fgets(buffer, BUFSIZ, fs)){
+
+        // chomp(buffer);
+        //debug("buffer is: %s", buffer);
+
+        if(buffer == NULL || buffer[0] == '#' || strlen(buffer) < 2) continue;
+
+        mimetype = strtok(buffer, WHITESPACE);
+
+        if(!mimetype) continue;
+
+        token = strtok(NULL, "\n");
+
+        if(!token) continue;
+
+        token = skip_whitespace(token);
+        token = strtok(token, WHITESPACE);
+
+        if(!token) continue;
+
+        // token = strtok(skip_whitespace(skip_nonwhitespace(buffer)), WHITESPACE);
+
+        if(streq(token, ext)){
+            fclose(fs);
+            return strdup(mimetype);
+        }
+
+        while((token = strtok(NULL, WHITESPACE))){
+            
+            if(streq(token, ext)){
+                fclose(fs);
+                return strdup(mimetype);
+            }
+
+        }
+    }
+
+    fclose(fs);
+    return strdup(DefaultMimeType);
+          
+  /*
+found:
+
     mimetype = strtok(buffer, WHITESPACE);
 
     if(!mimetype)
@@ -96,6 +144,7 @@ char * determine_mimetype(const char *path) { // r->path
     debug("Full extension: %s", mimetype);
 
     return strdup(mimetype);
+    */
 }
 
 /**
@@ -188,10 +237,9 @@ char * skip_nonwhitespace(char *s) {
  * @return  Point to first non-whitespace character in s.
  **/
 char * skip_whitespace(char *s) {
-
     char* start = s;
 
-    while(isspace(*start))
+    while(start && isspace(*start))
         start++;
 
     return start;
