@@ -167,7 +167,6 @@ Status  handle_file_request(Request *r) {
         debug("Unable to open file in handle file request");
         return handle_error(r, HTTP_STATUS_NOT_FOUND);
     }
-
     /* Determine mimetype */
 
     mimetype = determine_mimetype(r->path); // changed from r->uri @ 9:17 workingo
@@ -316,7 +315,7 @@ Status  handle_error(Request *r, Status status) {
 
 
     /* Return specified status */
-    return status; // changed from status 3:39 sunday
+    return status;
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
