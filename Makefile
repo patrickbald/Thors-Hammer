@@ -1,7 +1,7 @@
 CC=		gcc
-CFLAGS=		-g -Wall -Werror -std=gnu99 -Iinclude
+CFLAGS=		-g -Wall -Werror -std=gnu99 -Iinclude # -Werror
 LD=		gcc
-LDFLAGS=	-L.
+LDFLAGS=	-Llib
 AR=		ar
 ARFLAGS=	rcs
 TARGETS=	bin/spidey
@@ -22,12 +22,12 @@ clean:
 
 # TODO: Add rules for bin/spidey, lib/libspidey.a, and any intermediate objects
 
-src/%.o: src/%.c include/spidey.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+src/%.o: src/%.c
+	$(CC) $(CFLAGS) -c -o $@ $^
+
+bin/spidey: src/spidey.o lib/libspidey.a
+	$(LD) $(LDFLAGS) -o $@ $^
 
 lib/libspidey.a: $(SOURCES)
 	$(AR) $(ARFLAGS) $@ $^
-
-bin/spidey: lib/libspidey.a src/spidey.o
-	$(LD) $(LDFLAGS) -o $@ $^
 
