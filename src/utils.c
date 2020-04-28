@@ -129,7 +129,7 @@ char * determine_request_path(const char *uri) {
 
     debug("path is: %s", path);
 
-    if(!strstr(path, RootPath)){ // changed from strstr monday 1:37am
+    if(strncmp(RootPath, path, strlen(RootPath))){
         debug("path doesnt start with rootpath");
         return NULL;
     }
