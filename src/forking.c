@@ -44,8 +44,7 @@ int forking_server(int sfd) {
             Status s = handle_request(r);
             exit(s);
         } else { // parent process
-            // close(sfd);
-            free_request(r); // TODO takes request structure as argument 
+            free_request(r);  
         }
 
     }

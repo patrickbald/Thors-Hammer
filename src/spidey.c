@@ -120,7 +120,6 @@ int main(int argc, char *argv[]) {
     else
         single_server(server_fd);
 
-    // TODO free rootpath
     free(RootPath);
 
     return 0; // return status;

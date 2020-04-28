@@ -98,20 +98,20 @@ void free_request(Request *r) {
     	return;
     }
 
-    /* TODO Close socket or fd */
+    /* Close socket or fd */
 
     if(fclose(r->stream) < 0){ // if FILE close it else close fd
         close(r->fd);
     }
 
-    /* TODO Free allocated struct strings */
+    /* Free allocated struct strings */
 
     if(r->method)   free(r->method);
     if(r->uri)      free(r->uri);
     if(r->path)     free(r->path);
     if(r->query)    free(r->query);
 
-    /* TODO Free headers list */
+    /* Free headers list */
 
     if(r->headers){
 
@@ -132,7 +132,7 @@ void free_request(Request *r) {
 
     }
 
-    /* TODO Free request */
+    /* Free request */
 
     free(r);
 
@@ -154,8 +154,7 @@ int parse_request(Request *r) {
         return -1;
     }
 
-    /* TODO Parse HTTP Request Method */
-    
+    /* Parse HTTP Request Method */
     int methodStatus = parse_request_method(r);
     if(methodStatus < 0){
         debug("Unable to parse request method:: %s", strerror(errno));
@@ -163,7 +162,7 @@ int parse_request(Request *r) {
     }
 
 
-    /* TODO Parse HTTP Requet Headers*/
+    /* Parse HTTP Requet Headers*/
     int headersStatus = parse_request_headers(r);
     if(headersStatus < 0){
         debug("Unable to parse request headers: %s", strerror(errno));
@@ -206,15 +205,11 @@ int parse_request_method(Request *r) {
 
     /* TODO Parse method and uri */
 
-    // GET RESOURCE HTTP/1.0
-    // GET /script.cgi?q=monkeys HTTP/1.0
 
     method = strtok(buffer, WHITESPACE);
-    // method = GET
     r->method = strdup(method);
     debug("method is: %s", r->method);
 
-    // char* resource = strtok(NULL, WHITESPACE); // want to parse the same buffer, uri = resource
     uri = strtok(NULL, WHITESPACE);
     debug("initial uri: %s", uri);
 
@@ -227,18 +222,8 @@ int parse_request_method(Request *r) {
     } else {
         query = " ";
         r->query = strdup(query);
-        // return 0;
     }
     
-    /*
-    query = strtok(NULL, WHITESPACE);
-    // query = q=monkeys
-
-    if(query)
-        r->query = strdup(query);
-
-    */
-
     uri = strtok(uri, "?");
     debug("uri is: %s", uri);
 
